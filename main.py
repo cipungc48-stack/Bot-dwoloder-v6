@@ -2,23 +2,26 @@
 import time
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 from config import BOT_TOKEN
-from handlers import start, mystats, handle_url, button_handler, user_downloads
+from handlers import start, mystats, handle_url, button_handler, language
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("mystats", mystats))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_url))
-    app.add_handler(CallbackQueryHandler(button_handler))
+    app.add_handler(CallbackQueryHandler(button_handler, pattern='^(mp4|mp3)$'))
+    app.add_handler(CallbackQueryHandler(language, pattern='^lang_'))
 
     print("="*60)
-    print("🎵 TIKTOK DOWNLOADER BOT - FULL FEATURES")
+    print("🎵 TIKTOK DOWNLOADER BOT - FIX DURASI + MULTI BAHASA")
     print("="*60)
     print("✅ 2 API Cadangan")
     print("✅ Fake User Agent")
     print("✅ Statistik Lengkap")
     print("✅ Auto Delete Pesan")
     print("✅ Statistik Pengguna")
+    print("✅ Multi Language (ID/EN)")
+    print("✅ Fix durasi (baca dari file)")
     print("="*60)
     print("🤖 Bot started... Press Ctrl+C to stop")
     print("="*60)

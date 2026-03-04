@@ -3,8 +3,9 @@ import os
 import time
 import random
 import requests
-from config import APIS, USER_AGENTS, DOWNLOAD_DIR
+import subprocess
 from datetime import datetime
+from config import APIS, USER_AGENTS, DOWNLOAD_DIR, get_text
 
 def get_headers():
     """Return random user agent headers"""
@@ -136,12 +137,32 @@ def convert_to_mp3(video_file, audio_file):
     os.system(f'ffmpeg -i "{video_file}" -q:a 0 -map a "{audio_file}" -y > /dev/null 2>&1')
     return os.path.exists(audio_file)
 
-def build_caption(data, format_type='video'):
+def get_file_duration(filepath):
+    """Mengembalikan durasi file dalam detik menggunakan ffprobe"""
+    try:
+        result = subprocess.run(
+            ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', filepath],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return int(float(result.stdout.strip()))
+    except Exception as e:
+        print(f"Error get duration: {e}")
+    return None
+
+def build_caption(data, format_type='video', actual_duration=None, lang='id'):
     """Buat caption lengkap dengan statistik dan format"""
     title = data.get('title', 'No Title')[:100]
     author = data.get('author', 'Unknown')
     region = data.get('region', '🌍 Unknown')
-    duration = data.get('duration', 0)
+    
+    if actual_duration:
+        duration = actual_duration
+    else:
+        duration = data.get('duration', 0)
+    
     create_time = data.get('create_time', '')
     views = data.get('views', '0')
     likes = data.get('likes', '0')
@@ -166,19 +187,19 @@ def build_caption(data, format_type='video'):
     caption = f"""
 🎵 *{title}*
 
-👤 **Author:** {author}
-📍 **Region:** {region}
-📅 **Upload:** {upload_date}
-⏱️ **Durasi:** {duration_str}
+👤 **{get_text('author', lang)}:** {author}
+📍 **{get_text('region', lang)}:** {region}
+📅 **{get_text('upload', lang)}:** {upload_date}
+⏱️ **{get_text('duration', lang)}:** {duration_str}
 
-📊 **STATISTIK VIDEO**
-┌ 👀 Views: `{views}`
-├ ❤️ Likes: `{likes}`
-├ 💬 Comments: `{comments}`
-├ 🔄 Shares: `{shares}`
-└ 📌 Saves: `{saves}`
+📊 **{get_text('stats_title', lang)}**
+┌ 👀 {get_text('views', lang)}: `{views}`
+├ ❤️ {get_text('likes', lang)}: `{likes}`
+├ 💬 {get_text('comments', lang)}: `{comments}`
+├ 🔄 {get_text('shares', lang)}: `{shares}`
+└ 📌 {get_text('saves', lang)}: `{saves}`
 
-🔥 **Hashtag:** {hashtags if hashtags else 'Tidak ada'}
-🎚️ **Format:** {'MP3 Audio' if format_type == 'audio' else 'MP4 Video'}
+🔥 **{get_text('hashtag', lang)}:** {hashtags if hashtags else get_text('none', lang)}
+🎚️ **{get_text('format', lang)}:** {'MP3 Audio' if format_type == 'audio' else 'MP4 Video'}
     """
     return caption
